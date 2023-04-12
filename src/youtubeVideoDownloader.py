@@ -4,7 +4,6 @@ from tkinter import ttk
 from threading import Thread
 from yt_dlp import YoutubeDL
 
-
 class DownloadWindow:
     def __init__(self, root, url):
         self.root = root
@@ -77,15 +76,13 @@ class DownloadWindow:
         self.should_stop = True
         self.window.destroy()
 
-
 def download_video():
     url = entry.get()
     window = DownloadWindow(root, url)
 
-
 root = Tk()
 root.title("Youtube Video Downloader")
-root.resizable(width=False, height=False)  # 幅と高さを固定
+root.resizable(width=False, height=False) # 幅と高さを固定
 icon = PhotoImage(file="./icon.png")
 root.iconphoto(False, icon)
 
