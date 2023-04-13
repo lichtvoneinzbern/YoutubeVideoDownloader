@@ -1,13 +1,17 @@
 from tkinter import *
 from tkinter import messagebox
 from tkinter import ttk
+from tkinter import filedialog
 from threading import Thread
 from yt_dlp import YoutubeDL
+import os
+import pyperclip
 
 class DownloadWindow:
-    def __init__(self, root, url):
+    def __init__(self, root, url, outDir):
         self.root = root
         self.url = url
+        self.outDir = outDir
         self.should_stop = False
         self.create_window()
 
@@ -30,6 +34,7 @@ class DownloadWindow:
 
         self.window.grab_set()
 
+    # submethod
     def start_download(self):
         self.thread = Thread(target=self.download_video)
         self.thread.start()
@@ -37,7 +42,7 @@ class DownloadWindow:
     def download_video(self):
         ydl_opts = {
             'format': 'best',
-            'outtmpl': '~/Desktop/%(title)s.%(ext)s',
+            'outtmpl': self.outDir+'/%(title)s.%(ext)s',
             'progress_hooks': [self.progress_hook]
         }
         try:
@@ -76,25 +81,72 @@ class DownloadWindow:
         self.should_stop = True
         self.window.destroy()
 
-def download_video():
-    url = entry.get()
-    window = DownloadWindow(root, url)
+class InputWindow:
+    def __init__(self):
+        self.desktopPath = os.path.join(os.path.expanduser("~"), "Desktop")
+        self.outDir = ""
 
-root = Tk()
-root.title("Youtube Video Downloader")
-root.resizable(width=False, height=False) # 幅と高さを固定
-icon = PhotoImage(file="./icon.png")
-root.iconphoto(False, icon)
+    def createWindow(self):
+        self.root = Tk()
+        self.root.title("Youtube Video Downloader")
+        self.root.resizable(width=False, height=False)  # 幅と高さを固定
+        icon = PhotoImage(file="./icon.png")
+        self.root.iconphoto(False, icon)
 
-label = Label(root, text="ダウンロードしたいYoutube動画のURLを入力してください")
-label.pack()
+        # Output dir
+        self.dirFrame = Frame(self.root)
+        self.dirFrame.pack(side=TOP, anchor="w", pady=(5, 0))
 
-entry = Entry(root, width=50)
-entry.pack()
+        self.outDirLabel = Label(self.dirFrame, text="保存場所")
+        self.outDirLabel.pack(side=LEFT)
 
-button = Button(root, text="Download", command=download_video)
-button.pack()
+        self.outDirTextbox = Text(self.dirFrame, height=1, width=50)
+        self.outDirTextbox.insert("1.0", self.desktopPath)
+        self.outDirTextbox.pack(side=LEFT)
 
-root.geometry("400x80")
+        self.selectDirButton = Button(
+            self.dirFrame, text="選択", command=self.select_dir)
+        self.selectDirButton.pack(side=RIGHT, padx=(5, 0))
 
-root.mainloop()
+        # URL
+        self.urlFrame = Frame(self.root)
+        self.urlFrame.pack(side=TOP, anchor="w", padx=(2, 0), pady=(5, 0))
+
+        self.entryLabel = Label(self.urlFrame, text="動画URL")
+        self.entryLabel.pack(side=LEFT)
+
+        self.entry = Entry(self.urlFrame, width=58)
+        self.entry.pack(side=LEFT)
+
+        self.pasteButton = Button(
+            self.urlFrame, text="貼り付け", command=self.paste_from_clipboard)
+
+        self.pasteButton.pack(side=LEFT, padx=(5, 0))
+
+        self.button = Button(self.root, text="ダウンロード",
+                             command=self.download_video, width=20, height=2)
+        self.button.pack(pady=(10, 0))
+
+        self.root.geometry("500x120")
+
+        self.root.mainloop()
+
+    # submethod
+    def download_video(self):
+        self.url = self.entry.get()
+        self.outDir = self.outDirTextbox.get(1.0, "end-1c")
+        self.window = DownloadWindow(self.root, self.url, self.outDir)
+
+    def select_dir(self):
+        self.outDir = filedialog.askdirectory()
+        self.outDirTextbox.delete(1.0, END)
+        self.outDirTextbox.insert(END, self.outDir)
+
+    def paste_from_clipboard(self):
+        text = pyperclip.paste()
+        self.entry.delete(0, END)
+        self.entry.insert(END, text)
+
+
+inputWindowIns = InputWindow()
+inputWindowIns.createWindow()
